@@ -1,0 +1,14 @@
+{
+  "douyin-chat-export": {
+    "repository": "https://github.com/TeamBreakerr/douyin-chat-export.git",
+    "commit": "11a50eef422f00298123fdd2499d883d624d1c67",
+    "path": "douyin-chat-export"
+  },
+  "PyWxDump": {
+    "repository": "https://github.com/alanhzw/PyWxDump.git",
+    "commit": "8330cb974a8ef2155a308799dd943b218b9dfc3d",
+    "path": "wechat-extract/PyWxDump"
+  },
+  "chatlab-cli": {"version": "0.37.1", "path": "chatlab-runtime/app"},
+  "node": {"version": "22.23.2", "path": "chatlab-runtime/node-v22.23.2-win-x64"}
+}

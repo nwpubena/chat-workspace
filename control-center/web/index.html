@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>对话工作台 · 微信与抖音</title><link rel="stylesheet" href="/static/style.css"></head>
+<body>
+<aside class="sidebar">
+  <a class="brand" href="/"><span class="brand-mark">聊</span><span>对话工作台<small>CHAT WORKSPACE</small></span></a>
+  <div class="nav-caption">我的工作空间</div>
+  <nav aria-label="主导航">
+    <button class="nav active" data-page="overview"><span>◈</span>总览</button>
+    <button class="nav" data-page="wechat"><span>☏</span>微信工作流</button>
+    <button class="nav" data-page="douyin"><span>♪</span>抖音工作流</button>
+    <button class="nav" data-page="search"><span>⌕</span>聊天检索</button>
+    <button class="nav" data-page="reports"><span>▥</span>分析与报告</button>
+    <button class="nav" data-page="tasks"><span>☷</span>任务中心 <span id="task-dot"></span></button>
+    <button class="nav" data-page="model"><span>⚙</span>生成模型</button>
+  </nav>
+  <div class="sidebar-bottom"><span class="local-dot"></span>本地优先 · 仅本机访问<small>微信与抖音分库保存<br>不自动发送聊天消息</small></div>
+</aside>
+<main>
+  <header><div><span class="eyebrow">PERSONAL CHAT WORKSPACE</span><h1 id="page-title">让聊天记录，有迹可循。</h1></div><div class="header-actions"><span class="pill">目标联系人 · 双平台</span><button id="refresh" class="button secondary">↻ 刷新状态</button></div></header>
+  <div id="active-banner" class="banner hidden" role="status"></div>
+  <section id="page-overview" class="page">
+    <div class="hero"><div><span class="eyebrow">从记录到理解</span><h2>采集、检索、分析。<br>在一个地方完成。</h2><p>把复杂流程交给工作台。你只需要选择下一步。</p><div class="actions"><button class="button primary" data-go="wechat">更新微信记录 ↗</button><button class="button white" data-go="search">查找一段对话</button></div></div><div class="hero-diagram" aria-label="数据处理流程"><span>01　获取记录</span><i>↓</i><span>02　整理与去重</span><i>↓</i><span>03　检索与理解</span></div></div>
+    <div id="stat-cards" class="grid two"></div>
+    <div class="grid two"><article class="card"><div class="card-heading"><h3>服务与索引</h3><span class="subtle">按需启动</span></div><div id="service-status"></div><div class="actions"><button class="button secondary" data-flow="chatlab_start">启动 ChatLab</button><button class="button secondary" data-flow="panel_start">启动抖音面板</button><button class="button secondary" data-flow="index_resume">续建索引</button></div><p class="hint">索引覆盖率取自磁盘检查点，不代表后台实时健康状态。续建请求完成后，索引仍可能在后台运行。</p></article><article class="card"><div class="card-heading"><h3>原有工具，仍可使用</h3><span class="badge">数据复用</span></div><p>工作台调度现有开源工具，并直接读取已有聊天库。微信和抖音保持独立，不复制出另一套聊天库。</p><div class="link-list"><a href="http://127.0.0.1:3110/" target="_blank" rel="noreferrer">打开 ChatLab 完整分析界面 ↗</a><a href="http://127.0.0.1:8000/panel" target="_blank" rel="noreferrer">打开抖音原生采集面板 ↗</a><a href="http://127.0.0.1:8000/" target="_blank" rel="noreferrer">打开抖音聊天浏览器 ↗</a></div><p class="hint">请先启动对应服务。请勿同时在旧脚本与工作台执行采集或导入。</p></article></div>
+  </section>
+  <section id="page-wechat" class="page hidden">
+    <div class="section-intro"><div><h2>微信：从本机记录到可检索的会话</h2><p>先保持微信登录。任务提示后再从系统托盘正常退出，不要强制结束进程。</p></div><button class="button primary" data-flow="wechat_update">▶ 一键更新微信</button></div>
+    <div class="notice">微信“增量”指重新读取本机历史，再按消息 ID 只追加缺少的消息，不是只解密新增部分。手机独有记录需先同步至电脑。图片和语音不等于已识别内容。</div>
+    <div id="wechat-steps" class="steps-grid"></div>
+    <article class="card"><h3>出错后不用从头来</h3><p>在任务中心查看具体失败步骤，点击“从失败步骤重试”。原生提取成功后，后续转换或导入失败，无需再次退出微信。中途停止会等当前步骤结束，不强行终止解密。</p></article>
+  </section>
+  <section id="page-douyin" class="page hidden">
+    <div class="section-intro"><div><h2>抖音：登录一次，按需增量更新</h2><p>只采集“目标联系人”。先完成扫码登录，再运行采集；两者不要同时进行。</p></div><button class="button primary" data-flow="douyin_update">▶ 一键更新抖音</button></div>
+    <article class="card login-card"><div><span class="eyebrow">ACCOUNT CONNECTION</span><h3>抖音登录</h3><p id="login-status">先启动抖音面板，再检查登录状态。</p><div class="actions"><button class="button secondary" data-flow="panel_start">启动面板</button><button class="button secondary" data-login="check">检查登录</button><button class="button primary" data-login="start">打开扫码登录</button><button class="button secondary" data-login="cancel">取消登录</button></div><p class="hint">扫码画面只在本机显示，不保存到任务日志。需要验证码或额外页面操作时，请使用下方原生面板。</p><a href="http://127.0.0.1:8000/panel" target="_blank" rel="noreferrer">打开原生登录面板 ↗</a></div><div id="login-preview" class="login-preview"><span>扫码画面会显示在这里</span></div></article>
+    <div id="douyin-steps" class="steps-grid"></div>
+  </section>
+  <section id="page-search" class="page hidden">
+    <article class="card"><h2>找回那一句话</h2><p>关键词找原话，语义找相近表达。每条结果都保留来源，不把推断当作证据。</p><form id="search-form"><div class="search-bar"><input id="query" placeholder="例如：吃饭，或「之前提过想去哪里玩」" maxlength="400" required><button class="button primary" type="submit">搜索对话</button></div><div class="filters"><label>平台<select id="search-platform"><option value="all">双平台</option><option value="wechat">微信</option><option value="douyin">抖音</option></select></label><label>方式<select id="search-mode"><option value="keyword">关键词检索</option><option value="semantic">语义检索</option></select></label><label>发送人<input id="sender" placeholder="留空查双方"></label><label>开始日期<input type="date" id="since"></label><label>结束日期<input type="date" id="until"></label></div><p class="hint">日期为北京时间，结束日期包含当天。语义模式按对话片段召回，摘录不是逐句语义命中；可展开附近对话。双平台按各自排名交替展示。需 ChatLab 在线，暂不支持发送人与日期筛选。关键词结果默认显示最近 10 条。</p></form></article>
+    <div class="results-heading"><h3 id="result-title">等待搜索</h3><button id="export-search" class="button secondary" disabled>导出检索证据</button></div><div id="results" class="results"><div class="empty">输入内容，查看带时间与来源的聊天记录。</div></div>
+    <article id="ai-card" class="card hidden"><div class="card-heading"><h3>基于这次检索生成分析</h3><span class="badge">需要云端模型</span></div><label>你希望怎么分析<textarea id="purpose" rows="3">总结这些片段中的表达习惯，区分事实、推断和建议；引用日期、发送人与消息 ID。</textarea></label><div class="actions"><button class="chip" id="reply-preset">改为生成回复建议</button><button class="chip" id="report-preset">改为聊天习惯报告</button></div><label class="consent"><input type="checkbox" id="cloud-consent">我同意将本次检索的前 20 条片段（每条最多 1,600 字符）发送到自己配置的云端服务。仅用于本次生成，不自动发消息。</label><button id="generate" class="button primary">生成有证据的分析</button><p class="hint">有限的检索样本不代表全部聊天。生成前会重新读取相同查询的证据；未经配置和确认不会调用云端。</p><pre id="ai-output" class="prose hidden"></pre><button id="download-ai" class="button secondary hidden">下载这份分析</button></article>
+  </section>
+  <section id="page-reports" class="page hidden"><div class="section-intro"><div><h2>让数据先说话</h2><p>本地基础统计，无需生成模型，不上传聊天。这里展示 ChatLab 累计记录，不作关系或性格判断。</p></div><div class="actions"><select id="report-platform"><option value="wechat">微信</option><option value="douyin">抖音</option></select><button id="build-report" class="button primary">生成基础报告</button></div></div><div id="report-output" class="empty">选择平台，点击生成报告。</div><div class="actions"><button id="download-report" class="button secondary" disabled>下载 Markdown 报告</button><button class="button secondary" data-go="search">检索证据并生成 AI 分析 ↗</button></div></section>
+  <section id="page-tasks" class="page hidden"><div class="section-intro"><div><h2>每一步，都看得见</h2><p>工作台一次执行一个任务。进度按步骤展示，不伪造采集百分比。日志保存在本机。</p></div></div><div id="jobs-list"></div></section>
+  <section id="page-model" class="page hidden"><div class="grid two"><article class="card"><span class="eyebrow">CLOUD GENERATION</span><h2>连接你的生成模型</h2><p>支持兼容 Chat Completions 格式的 HTTPS 云端接口。此配置仅用于工作台，不会修改 ChatLab 的独立设置。</p><form id="model-form"><label>接口基础地址<input id="base-url" type="url" placeholder="https://你的服务地址/v1" required></label><label>模型名称<input id="model-name" placeholder="填写服务商提供的准确模型名" required></label><label>API Key<input id="api-key" type="password" autocomplete="off" placeholder="首次必填；已保存时留空表示保留"></label><p id="key-status" class="hint"></p><div class="actions"><button class="button primary" type="submit">保存配置</button><button class="button secondary" id="test-model" type="button">测试连接</button></div></form><p id="model-result" class="hint"></p></article><article class="card"><h3>检索与生成，是两件事</h3><div class="model-explain"><span class="badge green">本地</span><div><h4>Qwen3 Embedding</h4><p>将聊天转换为可检索的语义向量。无需在这里填写密钥，沿用 ChatLab 当前本地索引。</p></div></div><div class="model-explain"><span class="badge">云端</span><div><h4>你选择的生成模型</h4><p>根据检索证据写总结或建议。每次分析都需要勾选发送确认。连接测试仅发送一句测试语，不包含聊天，但可能计费。</p></div></div><div class="notice">API Key 使用 Windows 当前用户凭据加密保存，不回显明文。换 Windows 用户或电脑后需重新填写。不要把密钥放入截图或报告。</div></article></div></section>
+  <footer>本机工作台 · 所有日期按北京时间显示 · 保留原话，谨慎推断</footer>
+</main>
+<div id="toast" role="alert" class="toast hidden"></div>
+<script src="/static/app.js" defer></script>
+</body></html>
