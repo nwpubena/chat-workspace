@@ -64,3 +64,8 @@ upstreams.json          外部依赖来源与原测试版本
 ## 发布边界
 
 `.gitignore` 使用文件白名单，新增源码需人工审核后再加入。不要使用 `git add -f` 添加运行数据。任何本地配置改动都应在提交前审查差异，忽略规则不能保护已经跟踪的文件内容。第三方依赖与许可范围见 `THIRD_PARTY.md`。
+
+## Ubuntu 服务器与博客入口
+
+新增独立的 `server/` 伴随服务，支持已导出 ChatLab / RAG JSONL 的导入、去重、关键词检索、同会话上下文和基础统计，可接入 StinkyPuppy 博客的登录保护。Windows 原生采集程序仍在本机运行；服务器版未提供微信提取、抖音扫码采集、ChatLab 语义索引或云端生成。安装及边界见 [server/README.md](server/README.md)。
+
