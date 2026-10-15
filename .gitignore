@@ -41,6 +41,8 @@
 !/server/backup.sh
 !/server/rollback.sh
 !/server/test_server.py
+!/server/check_gateway.py
+!/server/test_gateway.py
 !/server/README.md
 !/server/web/index.html
 !/server/web/app.js
@@ -65,4 +67,5 @@
 /wechat-extract/PyWxDump/
 /wechat-extract/*-exports/
 /wechat-extract/temporary/
+
 

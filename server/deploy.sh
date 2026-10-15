@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 [[ $EUID -eq 0 ]] || { echo '请运行 sudo bash server/deploy.sh'; exit 1; }
+umask 077
+MODE='install'
+if [[ "${1:-}" == --resume && $# == 1 ]]; then
+    MODE='resume'
+elif [[ $# -ne 0 ]]; then
+    echo '用法：sudo bash server/deploy.sh [--resume]'; exit 1
+fi
+exec 9>/run/chat-workspace-deploy.lock
+flock -n 9 || { echo '已有另一个工作台安装进程，请等待它结束。'; exit 1; }
 source /etc/os-release
 [[ "$ID" == ubuntu && "$VERSION_ID" == 24.04 ]] || { echo '适用于 Ubuntu 24.04。'; exit 1; }
 SOURCE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -26,7 +35,20 @@ failure() {
 }
 trap failure ERR
 [[ -f /opt/stinkypuppy-blog/wsgi.py && -f /etc/nginx/sites-available/stinkypuppy-blog ]] || { echo '没有找到前面部署的博客，请先核对安装路径。'; exit 1; }
-[[ ! -e "$APP" && ! -e /etc/chat-workspace.env && ! -e /etc/systemd/system/chat-workspace.service ]] || { echo '已有工作台安装或未完成安装。为避免覆盖，停止；请发送之前的报错。'; exit 1; }
+if [[ "$MODE" == resume ]]; then
+    [[ -d "$APP" && ! -L "$APP" && -f /etc/chat-workspace.env && -f /etc/systemd/system/chat-workspace.service ]] || { echo '没有找到可续装的工作台，请先核对状态。'; exit 1; }
+    grep -Fxq 'WorkingDirectory=/opt/chat-workspace' /etc/systemd/system/chat-workspace.service
+    grep -Fxq 'WORKSPACE_DATA_DIR=/var/lib/chat-workspace' /etc/chat-workspace.env
+    if grep -Fq '# CHAT-WORKSPACE INTEGRATION v1' /opt/stinkypuppy-blog/wsgi.py /etc/nginx/sites-available/stinkypuppy-blog || [[ -e /etc/nginx/snippets/chat-workspace.conf ]]; then
+        echo '现有博客入口尚未回滚，停止续装以免覆盖配置。请发送此提示继续排查。'; exit 1
+    fi
+    install -d -m 700 /var/backups/chat-workspace
+    tar -C / -czf "/var/backups/chat-workspace/resume-$(date -u +%Y%m%dT%H%M%S)-$$.tar.gz" opt/chat-workspace etc/chat-workspace.env etc/systemd/system/chat-workspace.service
+    systemctl stop chat-workspace.service
+    echo '已备份上次安装的程序和配置；续装将保留数据库及网关密钥。'
+else
+    [[ ! -e "$APP" && ! -e /etc/chat-workspace.env && ! -e /etc/systemd/system/chat-workspace.service ]] || { echo '已有工作台安装或未完成安装。为避免覆盖，停止；失败回滚后可使用 --resume。'; exit 1; }
+fi
 systemctl is-active --quiet stinkypuppy-blog
 nginx -t
 nginx -V 2>&1 | grep -q -- --with-http_auth_request_module
@@ -37,10 +59,11 @@ apt-get install -y gunicorn python3 curl
 id chat-workspace &>/dev/null || useradd --system --home-dir "$DATA" --shell /usr/sbin/nologin chat-workspace
 install -d -m 755 "$APP"
 install -d -m 700 -o chat-workspace -g chat-workspace "$DATA"
-install -m 644 "$SOURCE/app.py" "$SOURCE/wsgi.py" "$SOURCE/integrate_blog.py" "$APP/"
+install -m 644 "$SOURCE/app.py" "$SOURCE/wsgi.py" "$SOURCE/integrate_blog.py" "$SOURCE/check_gateway.py" "$APP/"
 cp -R -- "$SOURCE/web" "$APP/"
 find "$APP" -type d -exec chmod 755 {} +
 find "$APP" -type f -exec chmod 644 {} +
+if [[ ! -e /etc/chat-workspace.env ]]; then
 python3 - <<'PY'
 import os, secrets
 from pathlib import Path
@@ -49,6 +72,7 @@ with p.open('x') as f:
     f.write('WORKSPACE_GATEWAY_TOKEN=' + secrets.token_hex(32) + '\nWORKSPACE_DATA_DIR=/var/lib/chat-workspace\nWORKSPACE_PUBLIC_ORIGIN=https://stinkypuppy.duckdns.org\nPYTHONDONTWRITEBYTECODE=1\n')
 os.chmod(p, 0o600)
 PY
+fi
 cat > /etc/systemd/system/chat-workspace.service <<'EOF'
 [Unit]
 Description=Chat Workspace Ubuntu companion
@@ -93,17 +117,15 @@ nginx -t
 systemctl restart stinkypuppy-blog
 # Check the blog recognizes the auth endpoint and denies anonymous access.
 for attempt in {1..20}; do
-    AUTH_STATUS="$(curl --max-time 2 -s -o /dev/null -w '%{http_code}' -H 'Host: stinkypuppy.duckdns.org' -H 'X-Forwarded-Proto: https' http://127.0.0.1:18765/_internal/workspace-auth || true)"
+    AUTH_STATUS="$(curl --disable --noproxy '*' --max-time 2 -s -o /dev/null -w '%{http_code}' -H 'Host: stinkypuppy.duckdns.org' -H 'X-Forwarded-Proto: https' http://127.0.0.1:18765/_internal/workspace-auth || true)"
     if [[ "$AUTH_STATUS" == 401 ]]; then break; fi
     sleep 1
 done
 [[ "$AUTH_STATUS" == 401 ]]
 systemctl reload nginx
-# An anonymous HTTPS request must redirect to the blog login, never reveal data.
-curl --fail --silent --show-error --resolve stinkypuppy.duckdns.org:443:127.0.0.1 -D /run/chat-workspace-check.headers -o /dev/null https://stinkypuppy.duckdns.org/workspace/
-grep -Eq '^HTTP/[^ ]+ 302' /run/chat-workspace-check.headers
-grep -Eiq '^location: (https://stinkypuppy.duckdns.org)?/admin/login' /run/chat-workspace-check.headers
-rm -f /run/chat-workspace-check.headers
+# Reload signals Nginx; old workers may still answer briefly. Wait for the
+# exact login redirect, without accepting an exposed 200 or hiding a real 404.
+python3 "$APP/check_gateway.py"
 printf '%s\n' "$SNAPSHOT" > /etc/chat-workspace.integration
 chmod 600 /etc/chat-workspace.integration
 install -m 750 "$SOURCE/backup.sh" /usr/local/sbin/chat-workspace-backup
@@ -133,3 +155,4 @@ echo '工作台安装完成；博客已添加“对话工作台”按钮。'
 echo '访问：https://stinkypuppy.duckdns.org/workspace/'
 echo '先使用已有博客后台账号登录，再点击“对话工作台”。'
 echo 'Windows 采集继续在电脑上执行，已导出的记录可在工作台导入。'
+
