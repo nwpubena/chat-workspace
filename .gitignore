@@ -34,6 +34,17 @@
 !/upstreams.json
 !/.gitignore
 !/.gitattributes
+!/server/app.py
+!/server/wsgi.py
+!/server/integrate_blog.py
+!/server/deploy.sh
+!/server/backup.sh
+!/server/rollback.sh
+!/server/test_server.py
+!/server/README.md
+!/server/web/index.html
+!/server/web/app.js
+!/server/web/style.css
 # Never publish local data, credentials, generated output, or nested source checkouts.
 **/data/
 **/__pycache__/
@@ -54,3 +65,4 @@
 /wechat-extract/PyWxDump/
 /wechat-extract/*-exports/
 /wechat-extract/temporary/
+
